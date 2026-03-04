@@ -196,7 +196,7 @@ button {
 }
 .box {
   position: relative;
-  margin: 3em 0 1.5em 0;
+  margin: 2.5em 0 1.5em 0;
   padding: 0.5em;
   border: solid 1.2px #66a7d2;
   border-radius: 8px;
@@ -249,6 +249,21 @@ li:last-child {
   align-items: center;
   margin-top: 0.7rem;
   padding: 0 0.7rem;
+}
+
+/* 分割タブ(#installment) と 毎月タブ(#recurring) 内の .grid は上余白を消す */
+#installment .grid,
+#recurring .grid {
+  margin-top: 0;
+}
+
+/* 分割と毎月タブ内の .box li の上パディングだけを小さくする（他は影響なし） */
+#installment .box li {
+  padding-top: 0.2rem;
+}
+#recurring .box li {
+  padding-top: 0.1rem;
+  padding-bottom: 0.6rem;
 }
 
 /* 左上（項目名） */
@@ -361,8 +376,9 @@ small {
   text-align: center;
   padding: 2rem 0 1rem;
   opacity: 0.8;
-  font-size: 2.1rem;
+  font-size: 1.8rem;
   color: #95ccff;
+  letter-spacing: 0.05rem;
 }
 
 .lala.disabled,
