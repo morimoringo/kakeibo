@@ -335,7 +335,8 @@ small {
 .edit-btn,
 .delete-btn,
 .delete-all-btn,
-.adjust-btn {
+.adjust-btn,
+.chart-btn {
   color: #5ea2d0;
   background-color: #1c1d1f;
   padding: 0.2rem 0.4rem;
@@ -439,4 +440,27 @@ small {
 /*副バンク*/
 .sub-bank-text {
   color: #51c255;
+}
+
+.chart-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: -0.6rem;
+  margin-top: 0.1rem;
+}
+
+.chart-btn {
+  width: 1.9rem;
+  text-align: center;
+  white-space: nowrap;
+  height: 1.6rem;
+  font-size: 1rem;
+  margin-right: 0.2rem;
+}
+
+.chart-area {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.1rem;
+  margin-bottom: -0.7rem;
 }
