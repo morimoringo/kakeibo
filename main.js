@@ -37,13 +37,14 @@ function createInstallments(baseData, totalMonths) {
   const results = [];
 
   const start = new Date(baseData.firstDate);
+  const baseDay = start.getDate();
 
   for (let i = 0; i < totalMonths; i++) {
-    const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
+    const d = new Date(start.getFullYear(), start.getMonth() + i, baseDay);
 
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = "01";
+    const dd = String(d.getDate()).padStart(2, "0");
 
     results.push({
       ...baseData,
@@ -122,6 +123,21 @@ const toggleBtn = document.getElementById("mode-toggle");
 const message = document.getElementById("message");
 
 let formMode = "normal";
+
+const CHART_COLORS = [
+  "#ff9fd0",
+  "#b1fbf6",
+  "#caa6fa",
+  "#ff65b9",
+  "#65c9ff",
+  "#9139B7",
+  "#fb06aa",
+  "#37d0ff",
+  "#9a64ff",
+  "#c11c8a",
+  "#2695B7",
+  "#5f2dc2",
+];
 
 // =======================================
 // イベント系
@@ -294,14 +310,6 @@ form.addEventListener("submit", (e) => {
     // 通常処理
     // =========================
   } else if (isRecurring) {
-    /*recurringExpenses.push({
-      id: Date.now(),
-      name,
-      amount,
-      day: new Date(firstDate).getDate(), // 引き落とし日だけ使う設計なら
-      firstDate,
-      hiddenMonths: [],
-    });*/
     recurringExpenses.push({
       id: Date.now(),
       name,
@@ -330,10 +338,6 @@ form.addEventListener("submit", (e) => {
         expenses = expenses.filter((e) => e.parentId !== target.parentId);
 
         // 新しい分割生成
-        /*const items = createInstallments(
-          { name, amount, firstDate },
-          totalMonths,
-        );*/
         const items = createInstallments(
           {
             name,
@@ -370,10 +374,6 @@ form.addEventListener("submit", (e) => {
           (end.getMonth() - start.getMonth()) +
           1;
 
-        /*const items = createInstallments(
-          { name, amount, firstDate },
-          totalMonths,
-        );*/
         const items = createInstallments(
           {
             name,
@@ -386,13 +386,6 @@ form.addEventListener("submit", (e) => {
 
         expenses.push(...items);
       } else {
-        /*expenses.push({
-          id: crypto.randomUUID(),
-          name,
-          amount,
-          firstDate,
-          type: "normal",
-        });*/
         expenses.push({
           id: crypto.randomUUID(),
           name,
@@ -443,12 +436,6 @@ function renderExpense(expense, monthKey = null, view = "list") {
       displayAmount = rec.monthlyAdjustments[monthKey];
     }
   }
-
-  /*li.innerHTML = `
-        <span class="top-left">${escapeHTML(expense.name)}</span>
-        <span class="bottom-left">毎月${escapeHTML(day)}日</span>
-        <span class="right" data-expense-id="${expense.id}" data-month-key="${monthKey || ""}">${escapeHTML(displayAmount.toLocaleString())}<small>円</small></span>
-    `;*/
 
   li.innerHTML = `
     <span class="top-left ${expense.bankType === "sub" ? "sub-bank-text" : ""}">
@@ -731,6 +718,15 @@ function renderList(targetEl, mode = "normal", view = "list", data = expenses) {
     }
   }
 
+  // recurringが1件も無い場合は空月を削除
+  if (recurringExpenses.length === 0) {
+    Object.keys(grouped).forEach((key) => {
+      if (grouped[key].length === 0) {
+        delete grouped[key];
+      }
+    });
+  }
+
   const keys = Object.keys(grouped);
 
   // =========================
@@ -754,6 +750,12 @@ function renderList(targetEl, mode = "normal", view = "list", data = expenses) {
 
   keys.forEach((key) => {
     const items = [...grouped[key]];
+
+    const validItems = items.filter(Boolean);
+
+    if (view === "list" && validItems.length === 0) {
+      return;
+    }
 
     // =========================
     // normal/list のみ日付順
@@ -804,10 +806,177 @@ function renderList(targetEl, mode = "normal", view = "list", data = expenses) {
       title.style.display = "none";
     }
 
+    // =========================
+    // 円グラフボタン
+    // =========================
+    const chartBtn = document.createElement("button");
+    console.trace("chartBtn created");
+    chartBtn.style.fontFamily =
+      '"Segoe UI Symbol", "Segoe UI Emoji", sans-serif';
+    chartBtn.innerHTML = "❤︎";
+    chartBtn.classList.add("chart-btn");
+
+    chartBtn.addEventListener("click", () => {
+      if (chartArea.style.display === "flex") {
+        const itemElements = ul.querySelectorAll(".grid");
+
+        itemElements.forEach((el) => {
+          const nameSpan = el.querySelector(".top-left");
+
+          if (nameSpan) {
+            nameSpan.style.color = "";
+          }
+        });
+
+        chartArea.style.display = "none";
+        return;
+      }
+
+      chartArea.innerHTML = "";
+
+      const canvas = document.createElement("canvas");
+      const dpr = window.devicePixelRatio || 1;
+
+      canvas.width = 220 * dpr;
+      canvas.height = 220 * dpr;
+
+      canvas.style.width = "220px";
+      canvas.style.height = "220px";
+
+      chartArea.appendChild(canvas);
+
+      const chartItems = [...items].sort((a, b) => b.amount - a.amount);
+
+      const colorMap = {};
+
+      chartItems.forEach((item, index) => {
+        colorMap[item.name] = CHART_COLORS[index % CHART_COLORS.length];
+      });
+
+      drawPieChart(canvas, chartItems);
+
+      const itemElements = ul.querySelectorAll(".grid");
+
+      itemElements.forEach((el) => {
+        const nameSpan = el.querySelector(".top-left");
+
+        if (!nameSpan) return;
+
+        const name = nameSpan.textContent.trim();
+
+        if (colorMap[name]) {
+          nameSpan.style.color = colorMap[name];
+        }
+      });
+
+      chartArea.style.display = "flex";
+
+      requestAnimationFrame(() => {
+        if (box.classList.contains("open")) {
+          details.style.maxHeight = details.scrollHeight + "px";
+        }
+      });
+    });
+
+    // =========================
+    // 円グラフ
+    // =========================
+    const chartArea = document.createElement("div");
+    chartArea.classList.add("chart-area");
+    chartArea.style.display = "none";
+
+    function drawPieChart(canvas, items) {
+      const ctx = canvas.getContext("2d");
+
+      const total = items.reduce((sum, item) => sum + (item.amount || 0), 0);
+
+      if (total <= 0) return;
+
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = Math.min(centerX, centerY) - 10;
+
+      const top3Names = [...items]
+        .sort((a, b) => b.amount - a.amount)
+        .slice(0, 3)
+        .map((item) => item.name);
+
+      // ======================
+      // 扇形描画
+      // ======================
+
+      let startAngle = -Math.PI / 2;
+
+      items.forEach((item, index) => {
+        const slice = (item.amount / total) * Math.PI * 2;
+
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+
+        ctx.arc(centerX, centerY, radius, startAngle, startAngle + slice);
+
+        ctx.closePath();
+
+        ctx.fillStyle = CHART_COLORS[index % CHART_COLORS.length];
+
+        ctx.fill();
+
+        startAngle += slice;
+      });
+
+      // ======================
+      // ラベル描画
+      // ======================
+
+      startAngle = -Math.PI / 2;
+
+      ctx.font = '65px "あんず"';
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.textRendering = "geometricPrecision";
+
+      items.forEach((item) => {
+        const slice = (item.amount / total) * Math.PI * 2;
+
+        const midAngle = startAngle + slice / 2;
+
+        const labelRadius = radius * 0.55;
+
+        const labelX = centerX + Math.cos(midAngle) * labelRadius;
+
+        const labelY = centerY + Math.sin(midAngle) * labelRadius;
+
+        if (top3Names.includes(item.name) && slice > 0.3) {
+          // 本体
+          ctx.fillStyle = "rgb(17, 15, 56)";
+          ctx.fillText(item.name, labelX, labelY);
+        }
+
+        startAngle += slice;
+      });
+    }
+
+    const chartRow = document.createElement("div");
+    chartRow.classList.add("chart-row");
+
+    if (view !== "list") {
+      chartArea.style.display = "none";
+      chartBtn.style.display = "none";
+      chartRow.style.display = "none";
+    }
+
     box.appendChild(title);
+
     const details = document.createElement("div");
     details.classList.add("details");
+
+    chartRow.appendChild(chartBtn);
+
+    details.appendChild(chartRow);
+    details.appendChild(chartArea);
+
     details.appendChild(ul);
+
     box.appendChild(details);
 
     // 分割ビューでは折り畳み不可にする（常に展開）
@@ -820,7 +989,6 @@ function renderList(targetEl, mode = "normal", view = "list", data = expenses) {
     totalDiv.className = "total";
 
     if (view === "list") {
-      //totalDiv.innerHTML = `<span class="label1">合計 ：</span>${escapeHTML(total.toLocaleString())}<span class="label2"> 円</span>`;
       totalDiv.innerHTML = `
           <span class="main">（${escapeHTML(mainTotal.toLocaleString())}）</span>
           <span class="label1">合計：</span>${escapeHTML(total.toLocaleString())}<span class="label2"> 円</span>
