@@ -811,9 +811,7 @@ function renderList(targetEl, mode = "normal", view = "list", data = expenses) {
     // =========================
     const chartBtn = document.createElement("button");
     console.trace("chartBtn created");
-    chartBtn.style.fontFamily =
-      '"Segoe UI Symbol", "Segoe UI Emoji", sans-serif';
-    chartBtn.textContent = "❤︎";
+    chartBtn.innerHTML = "<span class=heart>❤︎</span>";
     chartBtn.classList.add("chart-btn");
 
     chartBtn.addEventListener("click", () => {
