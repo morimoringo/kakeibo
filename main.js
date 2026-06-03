@@ -1154,3 +1154,4 @@ function generateDisplayData(baseExpenses) {
 applyFormMode();
 applyBankMode();
 renderAllLists();
+ 
