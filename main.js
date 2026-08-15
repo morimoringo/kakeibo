@@ -1,3 +1,5 @@
+import { backupToFirebase, restoreFromFirebase } from "./firebase.js";
+
 // =======================================
 // ユーティリティ関数
 // =======================================
@@ -99,6 +101,9 @@ function applyBankMode() {
 // =======================================
 // DOM要素
 // =======================================
+const backupBtn = document.getElementById("backupBtn");
+const restoreBtn = document.getElementById("restoreBtn");
+
 const form = document.getElementById("expense-form");
 const lala = document.querySelector(".lala");
 const coco = document.querySelector(".coco");
@@ -138,6 +143,53 @@ const CHART_COLORS = [
   "#2695B7",
   "#5f2dc2",
 ];
+
+// =======================================
+// firebaseバックアップ・復元ボタン
+// =======================================
+backupBtn.addEventListener("click", async () => {
+  try {
+    await backupToFirebase();
+
+    message.textContent = "バックアップ完了～";
+    message.classList.add("show");
+    setTimeout(() => message.classList.remove("show"), 2000);
+  } catch (error) {
+    console.error("バックアップに失敗しました:", error);
+    message.textContent = "バックアップ失敗～";
+    message.classList.add("show");
+    setTimeout(() => message.classList.remove("show"), 2000);
+  }
+});
+
+restoreBtn.addEventListener("click", async () => {
+  const confirmed = confirm("データを復元する？");
+
+  if (!confirmed) return;
+
+  try {
+    const data = await restoreFromFirebase();
+
+    localStorage.setItem("expenses", JSON.stringify(data.expenses || []));
+
+    localStorage.setItem(
+      "recurringExpenses",
+      JSON.stringify(data.recurringExpenses || []),
+    );
+
+    alert("ページを再読み込みするよ～");
+    message.textContent = "復元完了だよ～";
+    message.classList.add("show");
+    setTimeout(() => message.classList.remove("show"), 2000);
+
+    location.reload();
+  } catch (error) {
+    console.error("復元に失敗しました:", error);
+    message.textContent = "復元失敗したよ～";
+    message.classList.add("show");
+    setTimeout(() => message.classList.remove("show"), 2000);
+  }
+});
 
 // =======================================
 // イベント系
@@ -1154,4 +1206,3 @@ function generateDisplayData(baseExpenses) {
 applyFormMode();
 applyBankMode();
 renderAllLists();
- 
