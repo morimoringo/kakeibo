@@ -13,7 +13,14 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <p id="title">家計簿</p>
+    <div class="header-row">
+      <p id="title">家計簿</p>
+      <div class="header-btn">
+        <button id="backupBtn">Ｃ</button>
+        <button id="restoreBtn">Ｐ</button>
+      </div>
+    </div>
+
     <p id="message" class="message"></p>
 
     <form id="expense-form">
@@ -73,6 +80,6 @@
     <ul class="expense-list hidden" id="installment"></ul>
     <ul class="expense-list hidden" id="recurring"></ul>
 
-    <script src="main.js"></script>
+    <script type="module" src="main.js"></script>
   </body>
 </html>
